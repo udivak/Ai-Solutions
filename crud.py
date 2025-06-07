@@ -44,7 +44,9 @@ def find_upsells(current_order: OrderRequest, new_order_id: int):
     with engine.begin() as session:
         query = select(orders.c.Item_id, func.avg(orders.c.Quantity).label("avg_quantity")
                        ).where(and_(orders.c.Customer_id == current_order.customer_id,
-                                    orders.c.Order_id != new_order_id)
+                                    orders.c.Order_id != new_order_id,
+                                    orders.c.Created_at >= three_months_ago
+                                    )
                                ).group_by(orders.c.Item_id)
         result = session.execute(query)
         result_rows = list(result)

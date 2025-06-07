@@ -31,7 +31,7 @@ async def create_order(order_request: OrderRequest):
 @app.get("/upsell_test")
 async def upsell_test():
     test_order = OrderRequest(customer_id=1, items=[OrderItem(item_id=1, quantity=2)])
-    crud.find_upsells(test_order, 6)
+    print(crud.find_upsells(test_order, 9))
     return {"test": "test"}
 
 
