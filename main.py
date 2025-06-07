@@ -5,22 +5,10 @@ import tables
 from fastapi import FastAPI
 import mysql.connector
 
-from models import OrderRequest
+from models import *
 
 app = FastAPI()
 
-# async def connect_db():
-#     db = mysql.connector.connect(
-#         host="127.0.0.1",
-#         user="root",
-#         password="160199",
-#         database="Ai Direct"
-#     )
-#     return db
-#
-# async def get_cursor():
-#     db = await connect_db()
-#     return db.cursor()
 
 @app.get("/")
 async def root():
@@ -29,26 +17,25 @@ async def root():
 
 @app.get("/get_orders/{customer_id}")
 async def get_orders_by_customer_id(customer_id: int):
-    # db = mysql.connector.connect(
-    #     host="127.0.0.1",
-    #     user="root",
-    #     password="160199",
-    #     database="Ai Direct"
-    # )
-    # db = await connect_db()
-    # cursor = db.cursor()
-    # cursor.execute("SELECT * FROM Orders WHERE customer_id = %s", (customer_id,))
-    # result = cursor.fetchall()
-    # db.close()
     return crud.get_orders_by_customer_id(customer_id)
 
 
 @app.post("/create_order")
 async def create_order(order_request: OrderRequest):
-    # db = await connect_db()
-    # cursor = db.cursor()
-    # for item in order_request.items:
-    #     cursor.execute("INSERT INTO O")
-    crud.insert_order_items(order_request)
+    new_order_id = crud.insert_order_items(order_request)
+    upsell_items = crud.find_upsells(order_request, new_order_id)
+    print(upsell_items)
     return {"message": "Order created successfully"}
+
+
+@app.get("/upsell_test")
+async def upsell_test():
+    test_order = OrderRequest(customer_id=1, items=[OrderItem(item_id=1, quantity=2)])
+    crud.find_upsells(test_order, 6)
+    return {"test": "test"}
+
+
+
+
+
 
