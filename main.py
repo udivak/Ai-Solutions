@@ -20,6 +20,11 @@ async def get_orders_by_customer_id(customer_id: int):
     return crud.get_orders_by_customer_id(customer_id)
 
 
+@app.get("/get_item_info/{item_id}")
+async def get_item_info(item_id: int):
+    return crud.get_item_info(item_id)
+
+
 @app.post("/create_order")
 async def create_order(order_request: OrderRequest):
     new_order_id = crud.insert_order_items(order_request)
