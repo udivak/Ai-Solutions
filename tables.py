@@ -1,11 +1,12 @@
 from sqlalchemy import (
     Table, Column, BigInteger, Text, DateTime, Integer,
-    ForeignKey, MetaData, func, PrimaryKeyConstraint, Index
+    ForeignKey, MetaData, func, PrimaryKeyConstraint, Index, JSON, String
 )
 
 metadata = MetaData()
 
-customers = Table(
+
+Customers = Table(
     "Customers",
     metadata,
     Column("Customer_id", BigInteger, primary_key=True, autoincrement=True),
@@ -13,15 +14,17 @@ customers = Table(
     Column("Customer_telephone", Text, nullable=False)
 )
 
-items = Table(
+Items = Table(
     "Items",
     metadata,
     Column("Item_id", BigInteger, primary_key=True, autoincrement=True),
     Column("Item_name", Text, nullable=False),
-    Column("Type", Text, nullable=False)
+    Column("Type", Text, nullable=False),
+    Column("Links", JSON, nullable=True),
+    Column("Department", String(255), nullable=True)
 )
 
-orders = Table(
+Orders = Table(
     "Orders",
     metadata,
     Column("Order_id", BigInteger, autoincrement=True, nullable=False),
