@@ -40,6 +40,10 @@ async def upsell_test():
     return {"test": "test"}
 
 
+@app.get("/get_item_links/{item_id}")
+async def get_links_by_item_id(item_id: int):
+    return crud.get_links_by_item_id(item_id)
+
 
 
 
