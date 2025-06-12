@@ -1,6 +1,6 @@
 from sqlalchemy import insert, select, delete, update, func, and_
 from db_connection import engine
-from tables import Customers, Items, Orders
+from tables import *
 from models import *
 from datetime import datetime, timedelta
 
@@ -82,3 +82,27 @@ def find_upsells(current_order: OrderRequest, new_order_id: int):
     return deltas
 
 
+def get_links_by_item_id(item_id: int):
+    with engine.begin() as session:
+        # Aliases for the ItemLinks table
+        il1 = ItemLinks.alias("il1")
+        il2 = ItemLinks.alias("il2")
+
+        query = (
+            select(Items, Links)
+            .select_from(
+                il1
+                .join(il2, il1.c.link_id == il2.c.link_id)
+                .join(Items, Items.c.item_id == il2.c.item_id)
+                .join(Links, il1.c.link_id == Links.c.link_id)
+            )
+            .where(
+                and_(
+                    il1.c.item_id == item_id,
+                    il2.c.item_id != item_id
+                )
+            )
+        )
+        result = session.execute(query)
+        result_rows = list(result.mappings())
+    return result_rows
