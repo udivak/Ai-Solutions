@@ -4,10 +4,17 @@ from tables import *
 from models import *
 from datetime import datetime, timedelta
 
+def get_all_items():
+    with engine.begin() as session:
+        query = select(Items)
+        result = session.execute(query)
+        result_rows = list(result.mappings())
+    return result_rows
+
 
 def get_item_info(item_id: int):
     with engine.begin() as session:
-        query = select(Items).where(Items.c.Item_id == item_id)             # type: ignore
+        query = select(Items).where(Items.c.item_id == item_id)             # type: ignore
         result = session.execute(query)
         result_row = result.mappings().first()
     return result_row
@@ -23,15 +30,15 @@ Returns:
 """
 def insert_order_items(order_request: OrderRequest) -> int:
     with engine.begin() as session:
-        max_order_id = session.execute(select(func.max(Orders.c.Order_id))).scalar()
+        max_order_id = session.execute(select(func.max(Orders.c.order_id))).scalar()
         new_order_id = max_order_id + 1
 
         for item in order_request.items:
             query = insert(Orders).values(
-                Order_id= new_order_id,
-                Customer_id=order_request.customer_id,
-                Item_id=item.item_id,
-                Quantity=item.quantity
+                order_id= new_order_id,
+                customer_id=order_request.customer_id,
+                item_id=item.item_id,
+                quantity=item.quantity
             )
             session.execute(query)
     return new_order_id
@@ -39,7 +46,7 @@ def insert_order_items(order_request: OrderRequest) -> int:
 
 def get_orders_by_customer_id(customer_id: int):
     with engine.begin() as session:
-        query = select(Orders).where(Orders.c.Customer_id == customer_id)         # type: ignore
+        query = select(Orders).where(Orders.c.customer_id == customer_id)         # type: ignore
         result = session.execute(query)
         result_rows = list(result.mappings())
     return result_rows
@@ -60,11 +67,11 @@ def find_upsells(current_order: OrderRequest, new_order_id: int):
     three_months_ago = datetime.now() - timedelta(days=90)
     with engine.begin() as session:
         query = select(Orders.c.Item_id, func.avg(Orders.c.Quantity).label("avg_quantity")
-                       ).where(and_(Orders.c.Customer_id == current_order.customer_id,
-                                    Orders.c.Order_id != new_order_id,
-                                    Orders.c.Created_at >= three_months_ago
+                       ).where(and_(Orders.c.customer_id == current_order.customer_id,
+                                    Orders.c.order_id != new_order_id,
+                                    Orders.c.created_at >= three_months_ago
                                     )
-                               ).group_by(Orders.c.Item_id)
+                               ).group_by(Orders.c.item_id)
         result = session.execute(query)
         result_rows = list(result)
 

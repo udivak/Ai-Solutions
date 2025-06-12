@@ -20,6 +20,10 @@ async def get_orders_by_customer_id(customer_id: int):
     return crud.get_orders_by_customer_id(customer_id)
 
 
+@app.get("/get_all_items")
+async def get_all_items():
+    return crud.get_all_items()
+
 @app.get("/get_item_info/{item_id}")
 async def get_item_info(item_id: int):
     return crud.get_item_info(item_id)
