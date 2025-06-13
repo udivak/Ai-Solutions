@@ -113,3 +113,11 @@ def get_links_by_item_id(item_id: int):
         result = session.execute(query)
         result_rows = list(result.mappings())
     return result_rows
+
+
+def get_customer_info(customer_telephone: str):
+    with engine.begin() as session:
+        query = select(Customers).where(Customers.c.customer_telephone == customer_telephone)       # type: ignore
+        result = session.execute(query)
+        customer = result.mappings().first()
+    return customer

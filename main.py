@@ -1,4 +1,6 @@
 import json
+from http.client import HTTPException
+
 import db_connection
 import crud
 import tables
@@ -24,6 +26,7 @@ async def get_orders_by_customer_id(customer_id: int):
 async def get_all_items():
     return crud.get_all_items()
 
+
 @app.get("/get_item_info/{item_id}")
 async def get_item_info(item_id: int):
     return crud.get_item_info(item_id)
@@ -47,6 +50,17 @@ async def upsell_test():
 @app.get("/get_item_links/{item_id}")
 async def get_links_by_item_id(item_id: int):
     return crud.get_links_by_item_id(item_id)
+
+
+@app.get("/get_customer_info/{customer_telephone}", response_model=Customer)
+async def get_customer_info(customer_telephone: str):
+    customer = crud.get_customer_info(customer_telephone)
+    print(customer)
+    print(type(customer))
+    if not customer:
+        raise HTTPException(status_code= 404, detail= "Customer not found")
+    return Customer(**dict(customer))
+
 
 
 
