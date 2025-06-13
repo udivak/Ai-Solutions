@@ -11,8 +11,10 @@ Customers = Table(
     metadata,
     Column("customer_id", BigInteger, primary_key=True, autoincrement=True),
     Column("customer_name", String(255), nullable=False),
-    Column("customer_telephone", String(255), nullable=False)
+    Column("customer_telephone", String(255), nullable=False),
+    Column("customer_city", String(255), nullable=False)
 )
+
 
 Items = Table(
     "Items",
@@ -22,6 +24,7 @@ Items = Table(
     Column("type", String(255), nullable=False),
     Column("department", String(255), nullable=True)
 )
+
 
 Orders = Table(
     "Orders",
@@ -36,12 +39,14 @@ Orders = Table(
     Index("item_id", "item_id")
 )
 
+
 Links = Table(
     "Links",
     metadata,
     Column("link_id", Integer, primary_key=True),
     Column("link_name", String(255), nullable=False),
 )
+
 
 ItemLinks = Table(
     "ItemLinks",
