@@ -6,7 +6,7 @@ import crud
 import tables
 from fastapi import FastAPI
 import mysql.connector
-
+from utils import utils
 from models import *
 
 app = FastAPI()
@@ -27,9 +27,19 @@ async def get_all_items():
     return crud.get_all_items()
 
 
-@app.get("/get_item_info/{item_id}")
-async def get_item_info(item_id: int):
-    return crud.get_item_info(item_id)
+@app.get("/get_item_info_by_id/{item_id}")
+async def get_item_info_by_id(item_id: int):
+    return crud.get_item_info_by_id(item_id)
+
+
+@app.get("/get_item_info_by_name/{hebrew_item_name}")
+async def get_item_info_by_name(hebrew_item_name: str):
+    english_name = utils.translate_item_name(hebrew_item_name)
+    if english_name:
+        items = crud.get_items_by_name(english_name)
+        return items
+    else:
+        return {"error": "Item name not found"}
 
 
 @app.post("/create_order")

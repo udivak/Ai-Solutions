@@ -12,12 +12,21 @@ def get_all_items():
     return result_rows
 
 
-def get_item_info(item_id: int):
+def get_item_info_by_id(item_id: int):
     with engine.begin() as session:
         query = select(Items).where(Items.c.item_id == item_id)             # type: ignore
         result = session.execute(query)
         result_row = result.mappings().first()
     return result_row
+
+
+def get_items_by_name(item_name: str):
+    with engine.begin() as session:
+        query = select(Items).where(Items.c.item_name == item_name)
+        result = session.execute(query)
+        result_rows = list(result.mappings())
+    return result_rows
+
 
 """
 Insert items of the given order into the orders table.
