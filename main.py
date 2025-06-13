@@ -68,7 +68,7 @@ async def get_customer_info(customer_telephone: str):
     print(customer)
     print(type(customer))
     if not customer:
-        raise HTTPException(status_code= 404, detail= "Customer not found")
+        raise HTTPException(status_code= 404, detail= "Customer not found")             # type: ignore
     return Customer(**dict(customer))
 
 
