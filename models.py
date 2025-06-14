@@ -16,3 +16,8 @@ class OrderItem(BaseModel):
 class OrderRequest(BaseModel):
     customer_id: int
     items: list[OrderItem]
+
+
+class MessageRequest(BaseModel):
+    text: str
+    language: str = "he"
