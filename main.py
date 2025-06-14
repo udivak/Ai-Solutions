@@ -1,6 +1,6 @@
 import json
 from http.client import HTTPException
-
+from intent_logic.intent_router import router
 import db_connection
 import crud
 import tables
@@ -10,6 +10,8 @@ from utils import utils
 from models import *
 
 app = FastAPI()
+app.include_router(router)
+
 
 
 @app.get("/")
