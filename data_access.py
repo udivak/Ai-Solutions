@@ -4,6 +4,7 @@ from tables import *
 from models import *
 from datetime import datetime, timedelta
 
+
 def get_all_items():
     with engine.begin() as session:
         query = select(Items)
