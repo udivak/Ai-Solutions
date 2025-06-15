@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 
 class Customer(BaseModel):
@@ -19,6 +19,17 @@ class OrderRequest(BaseModel):
     items: list[OrderItem]
 
 
+class OrderIDs(BaseModel):
+    order_ids: List[int]
+
+
 class MessageRequest(BaseModel):
     text: str
     language: str = "he"
+
+
+
+
+class Other(BaseModel):
+    query: str
+

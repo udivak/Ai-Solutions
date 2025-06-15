@@ -1,4 +1,4 @@
-from sqlalchemy import insert, select, delete, update, func, and_
+from sqlalchemy import insert, select, delete, update, func, and_, text
 from db_connection import engine
 from tables import *
 from models import *
@@ -131,3 +131,24 @@ def get_customer_info(customer_telephone: str):
         result = session.execute(query)
         customer = result.mappings().first()
     return customer
+
+
+def get_order_items_info(order_id: int):
+    with engine.begin() as session:
+        query = select(Orders, Items).join(Items, Orders.c.item_id == Items.c.item_id).where(Orders.c.order_id == order_id)         # type: ignore
+        result = session.execute(query)
+        rows = list(result.mappings())
+    cleaned_items = []
+    for row in rows:
+        row_dict = dict(row)
+        # Remove duplicate/renamed item_id_1
+        row_dict.pop("item_id_1", None)
+        cleaned_items.append(row_dict)
+    return cleaned_items
+
+
+def get_query_result(query: str):
+    with engine.begin() as session:
+        result = session.execute(text(query))
+        result_rows = list(result.mappings())
+    return result_rows

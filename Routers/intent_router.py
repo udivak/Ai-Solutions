@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import String
+import data_access
 from intent_logic import intent_matcher
-from models import MessageRequest
+from models import MessageRequest, Other
 
 router = APIRouter()
 
@@ -16,4 +18,9 @@ async def detect_intent(message: MessageRequest):
     except Exception as e:
         raise HTTPException(status_code=404, detail={ "message": "error", "Exception occurred in detect_intent": None,
                                                       "exception": str(e) })
+
+
+@router.post("/other")
+async def other(other: Other):
+    return data_access.get_query_result(other.query)
 
