@@ -21,14 +21,22 @@ async def get_item_info_by_id(item_id: int):
         raise HTTPException(status_code=404, detail={ "error": "Error fetching item" })
 
 
-@router.get("/get_item_info_by_name/{hebrew_item_name}")
-async def get_item_info_by_name(hebrew_item_name: str):
+@router.get("/get_item_info_by_he_name/{hebrew_item_name}")
+async def get_item_info_by_he_name(hebrew_item_name: str):
     english_name = utils.translate_item_name(hebrew_item_name)
     if english_name:
         items = data_access.get_items_by_name(english_name)
         return items
     else:
+        raise (HTTPException(status_code=404, detail={ "error": "Error fetching item" }))
+
+
+@router.get("/get_item_info_by_name/{eng_item_name}")
+async def get_item_info_by_eng_name(eng_item_name: str):
+    items = data_access.get_items_by_name(eng_item_name)
+    if not items:
         raise HTTPException(status_code=404, detail={ "error": "Error fetching item" })
+    return items
 
 
 @router.get("/get_item_links/{item_id}")

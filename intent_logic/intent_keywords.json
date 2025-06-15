@@ -13,7 +13,7 @@
   },
   "create_order": {
     "en": ["place order", "i want to order", "add to cart", "i want to buy"],
-    "he": ["אני רוצה להזמין", "להוסיף להזמנה", "בצע הזמנה", "לבצע הזמנה"]
+    "he": ["אני רוצה להזמין", "אני רוצה לסיים", "לסיים", "אני רוצה להוסיף", "להוסיף להזמנה", "בצע הזמנה", "לבצע הזמנה"]
   },
   "continue_chat": {
     "en": ["my past orders", "previous orders", "order history"],
