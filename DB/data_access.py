@@ -1,7 +1,7 @@
-from sqlalchemy import insert, select, delete, update, func, and_, text
-from db_connection import engine
-from tables import *
-from models import *
+from sqlalchemy import insert, select, and_, text
+from .db_connection import engine
+from .tables import *
+from utils.models import *
 from datetime import datetime, timedelta
 
 

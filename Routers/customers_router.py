@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from models import Customer
-import data_access
+from utils.models import Customer
+from DB import data_access
 
 router = APIRouter()
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from models import OrderRequest, OrderItem, OrderIDs
-import data_access
+from utils.models import OrderRequest, OrderItem, OrderIDs
+from DB import data_access
 
 router = APIRouter()
 

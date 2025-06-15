@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from utils import utils
-import data_access
+from DB import data_access
 
 router = APIRouter()
 
