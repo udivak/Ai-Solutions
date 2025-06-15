@@ -1,9 +1,7 @@
-from fastapi import APIRouter, Request, HTTPException
-from pydantic import BaseModel
-from sqlalchemy import String
-import data_access
+from fastapi import APIRouter, HTTPException
+from DB import data_access
 from intent_logic import intent_matcher
-from models import MessageRequest, Other
+from utils.models import MessageRequest, Other
 
 router = APIRouter()
 

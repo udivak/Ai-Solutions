@@ -1,7 +1,7 @@
-from sqlalchemy import insert, select, delete, update, func, and_, text
-from db_connection import engine
-from tables import *
-from models import *
+from sqlalchemy import insert, select, and_, text
+from .db_connection import engine
+from .tables import *
+from utils.models import *
 from datetime import datetime, timedelta
 
 
@@ -76,7 +76,7 @@ Returns:
 def find_upsells(current_order: OrderRequest, new_order_id: int):
     three_months_ago = datetime.now() - timedelta(days=90)
     with engine.begin() as session:
-        query = select(Orders.c.Item_id, func.avg(Orders.c.Quantity).label("avg_quantity")
+        query = select(Orders.c.item_id, func.avg(Orders.c.quantity).label("avg_quantity")
                        ).where(and_(Orders.c.customer_id == current_order.customer_id,
                                     Orders.c.order_id != new_order_id,
                                     Orders.c.created_at >= three_months_ago

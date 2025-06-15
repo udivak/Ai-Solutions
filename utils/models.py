@@ -16,7 +16,19 @@ class OrderItem(BaseModel):
 
 class OrderRequest(BaseModel):
     customer_id: int
-    items: list[OrderItem]
+    customer_telephone: str
+    items: List[OrderItem]
+
+
+class OrderItemRaw(BaseModel):
+    item_name: str
+    quantity: int
+
+
+class OrderRequestRaw(BaseModel):
+    customer_id: int
+    customer_telephone: str
+    items: List[OrderItemRaw]
 
 
 class OrderIDs(BaseModel):
@@ -25,7 +37,9 @@ class OrderIDs(BaseModel):
 
 class MessageRequest(BaseModel):
     text: str
+    sender: str
     language: str = "he"
+
 
 
 

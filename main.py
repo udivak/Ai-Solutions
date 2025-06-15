@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from Routers import orders_router, items_router, customers_router, intent_router
+from Routers import orders_router, items_router, customers_router, intent_router, chat_memory_router
 
 app = FastAPI()
 
@@ -7,6 +7,7 @@ app.include_router(intent_router.router, prefix="/intent", tags=["Intent Routing
 app.include_router(orders_router.router, prefix="/orders", tags=["Orders Routing"])
 app.include_router(items_router.router, prefix="/items", tags=["Items Routing"])
 app.include_router(customers_router.router, prefix="/customers", tags=["Customers Routing"])
+app.include_router(chat_memory_router.router, prefix="/chat_memory", tags=["Redis Chat Memory"])
 
 @app.get("/")
 async def root():
