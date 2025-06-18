@@ -65,5 +65,6 @@ async def get_order_items(customer_telephone: str) -> list:
 
 
 async def clear_order_context(customer_telephone: str):
-    await r.delete(f"chat_session:{customer_telephone}")
+    key = get_today_key(customer_telephone)
+    await r.delete(key)
     await r.delete(f"order:{customer_telephone}")

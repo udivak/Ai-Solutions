@@ -4,6 +4,12 @@ from utils.models import *
 
 router = APIRouter()
 
+@router.get("/get_key/{customer_telephone}")
+async def get_key(customer_telephone: str):
+    key = redis_chat_memory.get_today_key(customer_telephone)
+    return { "key": key }
+
+
 @router.get("/get_chat_memory/{customer_telephone}")
 async def get_chat_memory(customer_telephone: str):
     messages = await redis_chat_memory.get_chat_history(customer_telephone)
