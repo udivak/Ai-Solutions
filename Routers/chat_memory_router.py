@@ -5,23 +5,21 @@ from utils.models import *
 router = APIRouter()
 
 @router.get("/get_chat_memory/{customer_telephone}")
-async def get_memory(customer_telephone: str):
-    return await redis_chat_memory.get_order_context(customer_telephone)
-
-
-# @router.post("/append_message/{customer_telephone}")
-# async def append_message(customer_telephone: str, message_request: MessageRequest):
-#     new_message = { "sender": message_request.sender, "message": message_request.text }
-#     current = await redis_chat_memory.get_order_context(customer_telephone)
-#     messages = current.get("chat_history", [])
-#     messages.append(new_message)
-#     await redis_chat_memory.update_order_context(customer_telephone, {"chat_history": messages})
-#     return ({ "status": "chat history updated" }
+async def get_chat_memory(customer_telephone: str):
+    messages = await redis_chat_memory.get_chat_history(customer_telephone)
+    order = await redis_chat_memory.get_order_items(customer_telephone)
+    return {
+        "messages": messages,
+        "order": order
+    }
 
 
 @router.post("/append_message/{customer_telephone}")
-async def append_message(customer_telephone: str, message_request: MessageRequest):
-    await redis_chat_memory.append_chat(customer_telephone, message_request.sender, message_request.text)
+async def append_message(customer_telephone: str, request: Request):
+    message_request = await request.json()
+    sender = message_request.get('sender', '')
+    text = message_request.get('text', '')
+    await redis_chat_memory.append_chat_message(customer_telephone, sender, text)
     return { "status": "message append successfully"}
 
 
@@ -29,11 +27,25 @@ async def append_message(customer_telephone: str, message_request: MessageReques
 async def append_items(customer_telephone: str, request: Request):
     data = await request.json()
     items = data.get('items', [])
-    await redis_chat_memory.append_order_items(customer_telephone, items)
-    return { "status": "item added successfully" }
+    await redis_chat_memory.store_order_items(customer_telephone, items)
+    return { "status": "order updated successfully" }
+
+
+@router.post("/set_order_flag/{customer_telephone}")
+async def set_order_flag(customer_telephone: str, request: Request):
+    data = await request.json()
+    flag = data.get("is_creating_order", False)
+    await redis_chat_memory.set_order_flag(customer_telephone, flag)
+    return { "status": f"order flag set to {flag}" }
+
+
+@router.get("/get_order_flag/{customer_telephone}")
+async def get_order_flag(customer_telephone: str):
+    flag = await redis_chat_memory.get_order_flag(customer_telephone)
+    return { "is_creating_order": flag }
 
 
 @router.delete("/clear_memory/{customer_telephone}")
 async def clear_memory(customer_telephone: str):
     await redis_chat_memory.clear_order_context(customer_telephone)
-    return { "status": "chat history cleared" }
+    return { "status": "chat memory and order cleared" }

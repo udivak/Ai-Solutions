@@ -1,48 +1,69 @@
 import redis.asyncio as redis
 import json
+from datetime import datetime
 
 # Configure Redis connection
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
-async def get_order_context(customer_telephone: str) -> dict:
-    data = await r.get(f"order:{customer_telephone}")
-    return json.loads(data) if data else {}
+### === SESSION METADATA === ###
+
+async def get_session_metadata(customer_telephone: str) -> dict:
+    key = f"chat_session:{customer_telephone}"
+    metadata = await r.hgetall(key)
+    return metadata or {}
 
 
-async def update_order_context(customer_telephone: str, new_data: dict):
-    current = await get_order_context(customer_telephone)
-    current.update(new_data)
-    await r.set(f"order:{customer_telephone}", json.dumps(current), ex=3600)            # ex -> expire in 1 hour
+async def update_session_metadata(customer_telephone: str, updates: dict):
+    key = f"chat_session:{customer_telephone}"
+    await r.hset(key, mapping=updates)
 
 
-async def append_chat(customer_telephone: str, sender: str, message: str):
-    context = await get_order_context(customer_telephone)
-    chat = context.get("chat_history", [])
-    chat.append({"sender": sender, "message": message})
-    await update_order_context(customer_telephone, { "chat_history": chat })
+async def set_order_flag(customer_telephone: str, value: bool):
+    await update_session_metadata(customer_telephone, { "is_creating_order": str(value).lower() })
 
 
-async def append_order_items(customer_telephone: str, items: list[dict]):
-    context = await get_order_context(customer_telephone)
-    order = context.get("order", [])
+async def get_order_flag(customer_telephone: str) -> bool:
+    metadata = await get_session_metadata(customer_telephone)
+    return metadata.get("is_creating_order", "false") == "true"
 
-    # Convert existing order to a dict for quick lookup
-    order_dict = {item["item_name"]: item["quantity"] for item in order}
 
-    # Update or add new items
-    for item in items:
-        name = item["item_name"]
-        qty = item["quantity"]
+### === CHAT HISTORY === ###
 
-        # Replace or sum quantities based on your logic
-        order_dict[name] = order_dict.get(name, 0) + qty
-        # OR: order_dict[name] = order_dict.get(name, 0) + qty  # to sum
+def get_today_key(customer_telephone: str) -> str:
+    today = datetime.today().strftime("%d-%m-%Y")
+    return f"chat:{customer_telephone}:{today}"
 
-    # Reconstruct order list
-    new_order = [{"item_name": k, "quantity": v} for k, v in order_dict.items()]
-    await update_order_context(customer_telephone, { "order": new_order })
 
+async def append_chat_message(customer_telephone: str, sender: str, message: str):
+    key = get_today_key(customer_telephone)
+    entry = {
+        "sender": sender,
+        "text": message
+    }
+    await r.rpush(key, json.dumps(entry))
+    # Optionally keep the list for 30 days
+    await r.expire(key, 3600)
+
+
+async def get_chat_history(customer_telephone: str) -> list:
+    key = get_today_key(customer_telephone)
+    raw_messages = await r.lrange(key, 0, -1)
+    return [json.loads(m) for m in raw_messages]
+
+
+### === ORDER ITEM STORAGE (if needed) ===
+
+async def store_order_items(customer_telephone: str, items: list[dict]):
+    key = f"order:{customer_telephone}"
+    await r.set(key, json.dumps(items), ex=3600)
+
+
+async def get_order_items(customer_telephone: str) -> list:
+    key = f"order:{customer_telephone}"
+    raw = await r.get(key)
+    return json.loads(raw) if raw else []
 
 
 async def clear_order_context(customer_telephone: str):
+    await r.delete(f"chat_session:{customer_telephone}")
     await r.delete(f"order:{customer_telephone}")

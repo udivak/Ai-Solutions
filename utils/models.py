@@ -36,8 +36,8 @@ class OrderIDs(BaseModel):
 
 
 class MessageRequest(BaseModel):
-    text: str
     sender: str
+    text: str
     language: str = "he"
 
 
