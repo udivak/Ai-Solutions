@@ -3,6 +3,8 @@ from .db_connection import engine
 from .tables import *
 from utils.models import *
 from datetime import datetime, timedelta
+from sqlalchemy.exc import NoResultFound
+
 
 
 def get_all_items():
@@ -41,6 +43,8 @@ Returns:
 def insert_order_items(order_request: OrderRequest) -> int:
     with engine.begin() as session:
         max_order_id = session.execute(select(func.max(Orders.c.order_id))).scalar()
+        if type(max_order_id) != int:
+            max_order_id = 0
         new_order_id = max_order_id + 1
 
         for item in order_request.items:
@@ -152,3 +156,27 @@ def get_query_result(query: str):
         result = session.execute(text(query))
         result_rows = list(result.mappings())
     return result_rows
+
+
+def map_item_names_to_ids(items: list[dict]) -> list[dict]:
+    mapped_items = []
+
+    with engine.begin() as session:
+        for item in items:
+            item_name = item["item_name"]
+            quantity = item["quantity"]
+
+            # Do LIKE query (e.g., WHERE item_name LIKE '%<item_name>%')
+            query = select(Items).where(Items.c.item_name.like(f"%{item_name}%"))
+            result = session.execute(query)
+            matched = result.mappings().first()
+
+            if not matched:
+                raise ValueError(f"Item not found in DB: {item_name}")
+
+            mapped_items.append({
+                "item_id": matched["item_id"],
+                "quantity": quantity
+            })
+
+    return mapped_items
