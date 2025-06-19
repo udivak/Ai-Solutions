@@ -68,3 +68,7 @@ async def clear_order_context(customer_telephone: str):
     key = get_today_key(customer_telephone)
     await r.delete(key)
     await r.delete(f"order:{customer_telephone}")
+
+
+async def clear_order_memory(customer_telephone: str):
+    await r.delete(f"order:{customer_telephone}")
