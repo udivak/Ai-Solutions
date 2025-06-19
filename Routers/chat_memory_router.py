@@ -55,3 +55,9 @@ async def get_order_flag(customer_telephone: str):
 async def clear_memory(customer_telephone: str):
     await redis_chat_memory.clear_order_context(customer_telephone)
     return { "status": "chat memory and order cleared" }
+
+
+@router.delete("/clear_order_memory/{customer_telephone}")
+async def clear_order_memory(customer_telephone: str):
+    await redis_chat_memory.clear_order_memory(customer_telephone)
+    return { "status": "chat memory and order cleared" }
