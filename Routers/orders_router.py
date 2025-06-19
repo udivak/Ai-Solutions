@@ -25,8 +25,6 @@ async def get_orders_by_customer_id(customer_id: int):
 @router.post("/create_order")
 async def create_order(request: Request):
     data = await request.json()
-    print("======in create order=======\n", data)
-
     # Handle case where items come as JSON string
     if isinstance(data.get("items"), str):
         try:
@@ -46,10 +44,8 @@ async def create_order(request: Request):
     }
 
     order_request = OrderRequest(**final_order)
-    print("========= SUCCESSFULLY PARSED TO ORDEREQUEST ==========\n")
     new_order_id = data_access.insert_order_items(order_request)
     upsell_items = data_access.find_upsells(order_request, new_order_id)
-
     return {"message": "Order created successfully", "upsell_items": upsell_items}
 
 
@@ -141,3 +137,4 @@ async def upsell_test():
 #         })
 #
 #     return mapped
+
