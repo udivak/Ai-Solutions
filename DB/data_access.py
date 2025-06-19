@@ -4,11 +4,11 @@ from .tables import *
 from utils.models import *
 from datetime import datetime, timedelta
 from sqlalchemy.exc import NoResultFound
-
+from utils.item_processing_utils import *
 
 
 def get_all_items():
-    with engine.begin() as session:
+    with engine.connect() as session:
         query = select(Items)
         result = session.execute(query)
         result_rows = list(result.mappings())
@@ -16,7 +16,7 @@ def get_all_items():
 
 
 def get_item_info_by_id(item_id: int):
-    with engine.begin() as session:
+    with engine.connect() as session:
         query = select(Items).where(Items.c.item_id == item_id)             # type: ignore
         result = session.execute(query)
         result_row = result.mappings().first()
@@ -24,7 +24,7 @@ def get_item_info_by_id(item_id: int):
 
 
 def get_items_by_name(item_name: str):
-    with engine.begin() as session:
+    with engine.connect() as session:
         query = select(Items).where(Items.c.item_name == item_name)
         result = session.execute(query)
         result_rows = list(result.mappings())
@@ -59,7 +59,7 @@ def insert_order_items(order_request: OrderRequest) -> int:
 
 
 def get_orders_by_customer_id(customer_id: int):
-    with engine.begin() as session:
+    with engine.connect() as session:
         query = select(Orders).where(Orders.c.customer_id == customer_id)         # type: ignore
         result = session.execute(query)
         result_rows = list(result.mappings())
@@ -79,7 +79,7 @@ Returns:
 """
 def find_upsells(current_order: OrderRequest, new_order_id: int):
     three_months_ago = datetime.now() - timedelta(days=90)
-    with engine.begin() as session:
+    with engine.connect() as session:
         query = select(Orders.c.item_id, func.avg(Orders.c.quantity).label("avg_quantity")
                        ).where(and_(Orders.c.customer_id == current_order.customer_id,
                                     Orders.c.order_id != new_order_id,
@@ -104,7 +104,7 @@ def find_upsells(current_order: OrderRequest, new_order_id: int):
 
 
 def get_links_by_item_id(item_id: int):
-    with engine.begin() as session:
+    with engine.connect() as session:
         # Aliases for the ItemLinks table
         il1 = ItemLinks.alias("il1")
         il2 = ItemLinks.alias("il2")
@@ -130,7 +130,7 @@ def get_links_by_item_id(item_id: int):
 
 
 def get_customer_info(customer_telephone: str):
-    with engine.begin() as session:
+    with engine.connect() as session:
         query = select(Customers).where(Customers.c.customer_telephone == customer_telephone)       # type: ignore
         result = session.execute(query)
         customer = result.mappings().first()
@@ -138,14 +138,14 @@ def get_customer_info(customer_telephone: str):
 
 
 def get_order_items_info(order_id: int):
-    with engine.begin() as session:
+    with engine.connect() as session:
         query = select(Orders, Items).join(Items, Orders.c.item_id == Items.c.item_id).where(Orders.c.order_id == order_id)         # type: ignore
         result = session.execute(query)
         rows = list(result.mappings())
     cleaned_items = []
     for row in rows:
         row_dict = dict(row)
-        # Remove duplicate/renamed item_id_1
+        # Remove duplicate / renamed item_id_1
         row_dict.pop("item_id_1", None)
         cleaned_items.append(row_dict)
     return cleaned_items
@@ -160,19 +160,35 @@ def get_query_result(query: str):
 
 def map_item_names_to_ids(items: list[dict]) -> list[dict]:
     mapped_items = []
+    with engine.connect() as session:
+        all_items_result = session.execute(select(Items.c.item_id, Items.c.item_name))
+        all_items = list(all_items_result.mappings())                           # [ (item_id, item_name), (...) ]
 
-    with engine.begin() as session:
+        normalized_map = {
+            normalize_hebrew(item["item_name"]): item
+            for item in all_items
+        }
+
         for item in items:
             item_name = item["item_name"]
             quantity = item["quantity"]
-
             # Do LIKE query (e.g., WHERE item_name LIKE '%<item_name>%')
-            query = select(Items).where(Items.c.item_name.like(f"%{item_name}%"))
-            result = session.execute(query)
+            like_query = select(Items).where(Items.c.item_name.like(f"%{item_name}%"))
+            result = session.execute(like_query)
             matched = result.mappings().first()
-
             if not matched:
-                raise ValueError(f"Item not found in DB: {item_name}")
+                # Normalize and fuzzy match
+                normalized_input = normalize_hebrew(item_name)
+                candidates = list(normalized_map.keys())
+                best_match, score, _ = process.extractOne(                                                  #type: ignore
+                    normalized_input,
+                    candidates,
+                    scorer=fuzz.WRatio
+                )
+                if not best_match or score < 75:
+                    raise ValueError(f"No good match for item: {item_name} (Score: {score})")
+
+                matched = normalized_map[best_match]
 
             mapped_items.append({
                 "item_id": matched["item_id"],
