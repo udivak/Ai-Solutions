@@ -32,8 +32,9 @@ async def append_message(customer_telephone: str, request: Request):
 @router.post("/append_items/{customer_telephone}")
 async def append_items(customer_telephone: str, request: Request):
     data = await request.json()
-    items = data.get('items', [])
-    await redis_chat_memory.store_order_items(customer_telephone, items)
+    # items = data.get('items', [])
+    print("ITEMS BEFORE STORE-ITEMS ->", data)
+    await redis_chat_memory.store_order_items(customer_telephone, data)
     return { "status": "order updated successfully" }
 
 
@@ -43,6 +44,11 @@ async def set_order_flag(customer_telephone: str, request: Request):
     flag = data.get("is_creating_order", False)
     await redis_chat_memory.set_order_flag(customer_telephone, flag)
     return { "status": f"order flag set to {flag}" }
+
+
+@router.post("/append_upsell_items")
+async def append_upsell_items(customer_telephone, request: Request):
+    data = await request.json()
 
 
 @router.get("/get_order_flag/{customer_telephone}")

@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException
+from starlette.requests import Request
+
 from utils import utils
 from DB import data_access
+from utils.models import OrderRequest
 
 router = APIRouter()
 
@@ -45,3 +48,28 @@ async def get_links_by_item_id(item_id: int):
     if len(links) == 0:
         raise HTTPException(status_code=404, detail={ "error": "No links found" })
     return links
+
+
+# @router.post("/map_item_names_to_ids")
+# async def match_names_to_ids(order_request: OrderRequest):
+#     items = [dict(item) for item in order_request.items]
+#     mapped_items = data_access.map_item_names_to_ids(items)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
