@@ -45,8 +45,9 @@ async def create_order(request: Request):
 
     order_request = OrderRequest(**final_order)
     new_order_id = data_access.insert_order_items(order_request)
-    upsell_items = data_access.find_upsells(order_request, new_order_id)
-    return {"message": "Order created successfully", "upsell_items": upsell_items}
+    #upsell_items = data_access.find_upsells(order_request, new_order_id)
+    #return {"message": "Order created successfully", "upsell_items": upsell_items}
+    return {"message": "Order created successfully", "new_order_id": new_order_id}
 
 
 
@@ -110,11 +111,13 @@ async def get_multiple_order_items_info(order_ids_data: OrderIDs):
 
 
 # upsell test endpoint
-@router.get("/upsell_test")
-async def upsell_test():
-    test_order = OrderRequest(customer_id=1, items=[OrderItem(item_id=1, quantity=2)])
-    print(data_access.find_upsells(test_order, 9))
-    return {"test": "test"}
+@router.post("/find_upsell")
+async def find_upsell(request: Request):
+    data = await request.json()
+    items = [dict(item) for item in data["items"]]
+    order_items = data_access.map_item_names_to_ids(items)
+    upsell_items = data_access.find_upsells(order_items, data["customer_id"])
+    return { "upsell_items": upsell_items }
 
 
 # async def map_item_names_to_ids(items: list[dict]) -> list[dict]:

@@ -11,7 +11,7 @@ app.include_router(chat_memory_router.router, prefix="/chat_memory", tags=["Redi
 
 @app.get("/")
 async def root():
-    return { "message": "Welcome to Ai Direct" }
+    return { "message": "Welcome to Ai Solutions" }
 
 
 

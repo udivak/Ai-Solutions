@@ -53,9 +53,24 @@ async def get_chat_history(customer_telephone: str) -> list:
 
 ### === ORDER ITEM STORAGE (if needed) ===
 
-async def store_order_items(customer_telephone: str, items: list[dict]):
+async def store_order_items(customer_telephone: str, items_to_add: list[dict] | dict):
     key = f"order:{customer_telephone}"
-    await r.set(key, json.dumps(items), ex=3600)
+    existing_items = await get_order_items(customer_telephone)
+    existing_item_names = { item['item_name'] for item in existing_items }
+    if isinstance(items_to_add, dict):
+        items_to_add = [items_to_add]
+
+    for item in items_to_add:
+        print("ITEM ------->", item)
+        if item['item_name'] in existing_item_names:
+            print(f"{item['item_name']} is already in existing items")
+            for existing_item in existing_items:
+                if existing_item['item_name'] == item['item_name']:
+                    existing_item['quantity'] = item['quantity']
+        else:
+            existing_items.append(item)
+
+    await r.set(key, json.dumps(existing_items), ex=3600)
 
 
 async def get_order_items(customer_telephone: str) -> list:
@@ -64,11 +79,22 @@ async def get_order_items(customer_telephone: str) -> list:
     return json.loads(raw) if raw else []
 
 
+
+async def clear_order_memory(customer_telephone: str):
+    await r.delete(f"order:{customer_telephone}")
+
+
+### === UPSELL ITEM STORAGE (if needed) ===
+
+async def store_upsell_items(customer_telephone: str, upsell_items: list[dict]):
+    key = f"upsell_items:{customer_telephone}"
+    await r.set(key, json.dumps(upsell_items), ex=3600)
+
+
+### === GENERAL ACTIONS ===
+
 async def clear_order_context(customer_telephone: str):
     key = get_today_key(customer_telephone)
     await r.delete(key)
     await r.delete(f"order:{customer_telephone}")
-
-
-async def clear_order_memory(customer_telephone: str):
-    await r.delete(f"order:{customer_telephone}")
+    await r.delete(f"upsell_items:{customer_telephone}")

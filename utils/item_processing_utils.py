@@ -14,14 +14,14 @@ def normalize_hebrew(text: str) -> str:
     return text.lower().strip()
 
 
-def find_best_match(user_input: str, items_dict: dict, score_threshold: float = 75):
+def find_best_match(user_input: str, choices: list, score_threshold: float = 75):
     normalized_input = normalize_hebrew(user_input)
-    choices = list(items_dict.keys())
+    #choices = list(items_dict.keys())
 
     match, score, _ = process.extractOne(normalized_input, choices, scorer=fuzz.WRatio)
 
     if score >= score_threshold:
-        return items_dict[match], score
+        return match, score
     else:
         return None, score
 
