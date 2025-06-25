@@ -108,7 +108,7 @@ def find_upsells(current_order: list[dict], customer_id) -> list[dict]:
             avg_qty = round(past_ordered_items[item_name]["quantity"])
             if current_qty < avg_qty:
                 delta = avg_qty - current_qty
-                deltas.append( { "item_id": item_id, "item_name": item_name, "delta": delta } )
+                deltas.append( { "item_id": item_id, "item_name": item_name, "delta": delta, "avg_quantity": avg_qty } )
     return deltas
 
 
@@ -136,6 +136,52 @@ def get_links_by_item_id(item_id: int):
         result = session.execute(query)
         result_rows = list(result.mappings())
     return result_rows
+
+
+def get_missing_linked_items_with_context(ordered_item_ids: list[int]) -> list[dict]:
+    with engine.connect() as session:
+        il1 = ItemLinks.alias("il1")
+        il2 = ItemLinks.alias("il2")
+
+        # Step 1: Find all link groups intersecting with ordered items
+        link_query = (
+            select(il1.c.link_id)
+            .where(il1.c.item_id.in_(ordered_item_ids))
+            .distinct()
+        )
+        link_ids = [row[0] for row in session.execute(link_query).fetchall()]
+
+        suggestions_by_group = []
+
+        for link_id in link_ids:
+            # Step 2: Get link name
+            link_name_query = select(Links.c.link_name).where(Links.c.link_id == link_id)
+            link_name_row = session.execute(link_name_query).first()
+            link_name = link_name_row[0] if link_name_row else f"Link {link_id}"
+
+            # Step 3: Get all items in this group
+            group_items_query = (
+                select(il2.c.item_id, Items.c.item_name)
+                .select_from(il2.join(Items, il2.c.item_id == Items.c.item_id))
+                .where(il2.c.link_id == link_id)
+            )
+            group_items = list(session.execute(group_items_query).mappings())
+
+            group_item_ids = [item["item_id"] for item in group_items]
+            ordered_in_group = [item for item in group_items if item["item_id"] in ordered_item_ids]
+            missing_in_group = [item for item in group_items if item["item_id"] not in ordered_item_ids]
+
+            if len(ordered_in_group) >= 1 and missing_in_group:
+                suggestions_by_group.append({
+                    "link_name": link_name,
+                    "suggested_because_of": ordered_in_group,
+                    "suggested_items": missing_in_group
+                })
+
+        return suggestions_by_group
+
+
+
 
 
 def get_customer_info(customer_telephone: str):
@@ -166,7 +212,7 @@ def get_query_result(query: str):
         result_rows = list(result.mappings())
     return result_rows
 
-
+'''
 def map_item_names_to_ids(items: list[dict]) -> list[dict]:
     mapped_items = []
     with engine.connect() as session:
@@ -188,7 +234,7 @@ def map_item_names_to_ids(items: list[dict]) -> list[dict]:
                 # Normalize and fuzzy match
                 normalized_input = normalize_hebrew(item_name)
                 candidates = list(normalized_map.keys())
-                # best_match, score, _ = rapidfuzz.process.extractOne(                                                #type: ignore
+                # best_match, score, _ = rapidfuzz.process.extractOne(                                    #type: ignore
                 #     normalized_input,
                 #     candidates,
                 #     scorer=fuzz.WRatio
@@ -204,5 +250,92 @@ def map_item_names_to_ids(items: list[dict]) -> list[dict]:
                 "item_id": matched["item_id"],
                 "quantity": quantity
             } )
+
+    return mapped_items
+'''
+'''
+def map_item_names_to_ids(items: list[dict]) -> list[dict]:
+    mapped_items = []
+    with engine.connect() as session:
+        all_items_result = session.execute(select(Items.c.item_id, Items.c.item_name))
+        all_items = list(all_items_result.mappings())
+        normalized_map = {
+            normalize_hebrew(item["item_name"]): item
+            for item in all_items
+        }
+
+        for item in items:
+            user_input_name = item["item_name"]
+            quantity = item["quantity"]
+
+            # Try LIKE query first
+            like_query = select(Items).where(Items.c.item_name.like(f"%{user_input_name}%"))
+            result = session.execute(like_query)
+            matched = result.mappings().first()
+            if matched:
+                db_item_name = matched["item_name"]
+            else:
+                # Normalize and fuzzy match
+                normalized_input = normalize_hebrew(user_input_name)
+                candidates = list(normalized_map.keys())
+                best_match, score = find_best_match(normalized_input, candidates)
+
+                if not best_match or score < 75:
+                    # raise ValueError(f"No good match for item: {user_input_name} (Score: {score})")
+                    db_item_name = "NOT FOUND"
+
+                matched = normalized_map[best_match]
+                db_item_name = matched["item_name"]
+
+            mapped_items.append({
+                "item_name": db_item_name,  # Always use the DB-corrected name
+                "item_id": matched["item_id"],
+                "quantity": quantity
+            })
+
+    return mapped_items
+'''
+
+def map_item_names_to_ids(items: list[dict]) -> list[dict]:
+    mapped_items = []
+    with engine.connect() as session:
+        all_items_result = session.execute(select(Items.c.item_id, Items.c.item_name))
+        all_items = list(all_items_result.mappings())
+        normalized_map = {
+            normalize_hebrew(item["item_name"]): item
+            for item in all_items
+        }
+
+        for item in items:
+            user_input_name = item["item_name"]
+            quantity = item["quantity"]
+
+            # Try LIKE query first
+            like_query = select(Items).where(Items.c.item_name.like(f"%{user_input_name}%"))
+            result = session.execute(like_query)
+            matched = result.mappings().first()
+
+            if matched:
+                db_item_name = matched["item_name"]
+                item_id = matched["item_id"]
+            else:
+                # Normalize and fuzzy match
+                normalized_input = normalize_hebrew(user_input_name)
+                candidates = list(normalized_map.keys())
+                best_match, score = find_best_match(normalized_input, candidates)
+
+                if not best_match or score < 85:
+                    db_item_name = user_input_name
+                    item_id = None
+                else:
+                    matched = normalized_map[best_match]
+                    db_item_name = matched["item_name"]
+                    item_id = matched["item_id"]
+
+            mapped_items.append({
+                "item_name": db_item_name,
+                "item_id": item_id,
+                "quantity": quantity
+            })
 
     return mapped_items
