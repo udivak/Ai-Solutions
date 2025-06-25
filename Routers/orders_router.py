@@ -1,3 +1,5 @@
+import datetime
+
 from fastapi import APIRouter, HTTPException
 from starlette.requests import Request
 import json
@@ -6,6 +8,10 @@ from utils.models import OrderRequest, OrderItem, OrderIDs, OrderRequestRaw
 from DB import data_access
 
 router = APIRouter()
+
+@router.get("/get_today_date")
+async def get_today_date():
+    return { "today": datetime.date.today().strftime('%d-%m-%Y') }
 
 @router.get("/get_orders/{customer_id}")
 async def get_orders_by_customer_id(customer_id: int):
@@ -25,6 +31,7 @@ async def get_orders_by_customer_id(customer_id: int):
 @router.post("/create_order")
 async def create_order(request: Request):
     data = await request.json()
+    print(data)
     # Handle case where items come as JSON string
     if isinstance(data.get("items"), str):
         try:
