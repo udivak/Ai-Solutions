@@ -5,7 +5,7 @@ from starlette.requests import Request
 import json
 from Routers import items_router
 from utils.models import OrderRequest, OrderItem, OrderIDs, OrderRequestRaw
-from DB import data_access
+from DB import orders_data_access, items_data_access
 
 router = APIRouter()
 
@@ -15,7 +15,7 @@ async def get_today_date():
 
 @router.get("/get_orders/{customer_id}")
 async def get_orders_by_customer_id(customer_id: int):
-    orders = data_access.get_orders_by_customer_id(customer_id)
+    orders = orders_data_access.get_orders_by_customer_id(customer_id)
     if len(orders) == 0:
         raise HTTPException(status_code=404, detail={ "error": "Orders not found", "customer_id": customer_id })
     return orders
@@ -40,7 +40,7 @@ async def create_order(request: Request):
             raise HTTPException(status_code=400, detail="Invalid JSON in 'items' field")
 
     try:
-        mapped_items = data_access.map_item_names_to_ids(data["items"])
+        mapped_items = items_data_access.map_item_names_to_ids(data["items"])
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -51,7 +51,7 @@ async def create_order(request: Request):
     }
 
     order_request = OrderRequest(**final_order)
-    new_order_id = data_access.insert_order_items(order_request)
+    new_order_id = orders_data_access.insert_order_items(order_request)
     #upsell_items = data_access.find_upsells(order_request, new_order_id)
     #return {"message": "Order created successfully", "upsell_items": upsell_items}
     return {"message": "Order created successfully", "new_order_id": new_order_id}
@@ -92,7 +92,7 @@ async def create_order(request: Request):
 
 @router.get("/get_order_items_info/{order_id}")
 async def get_order_items_info(order_id: int):
-    order_items = data_access.get_order_items_info(order_id)
+    order_items = orders_data_access.get_order_items_info(order_id)
     if len(order_items) == 0:
         raise HTTPException(status_code=404, detail={ "error": "An error has occurred" })
     return order_items
@@ -102,7 +102,7 @@ async def get_order_items_info(order_id: int):
 async def get_multiple_order_items_info(order_ids_data: OrderIDs):
     all_items = []
     for order_id in order_ids_data.order_ids:
-        order_items = data_access.get_order_items_info(order_id)
+        order_items = orders_data_access.get_order_items_info(order_id)
         if order_items:
             all_items.append({
                 "order_id": order_id,
@@ -122,8 +122,8 @@ async def get_multiple_order_items_info(order_ids_data: OrderIDs):
 async def find_upsell(request: Request):
     data = await request.json()
     items = [dict(item) for item in data["items"]]
-    order_items = data_access.map_item_names_to_ids(items)
-    upsell_items = data_access.find_upsells(order_items, data["customer_id"])
+    order_items = items_data_access.map_item_names_to_ids(items)
+    upsell_items = orders_data_access.find_upsells(order_items, data["customer_id"])
     return { "upsell_items": upsell_items }
 
 
