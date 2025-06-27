@@ -7,6 +7,19 @@ from .items_data_access import map_item_names_to_ids
 
 
 def insert_order_items(order_request: OrderRequest) -> int:
+    """Insert order items into the database and return the new order ID.
+
+    Parameters
+    ----------
+    order_request : OrderRequest
+        Order request containing the customer ID and a list of items to insert.
+
+    Returns
+    -------
+    int
+        The generated order ID for the inserted records.
+    """
+
     with engine.begin() as session:
         max_order_id = session.execute(select(func.max(Orders.c.order_id))).scalar()
         if type(max_order_id) != int:
@@ -25,6 +38,19 @@ def insert_order_items(order_request: OrderRequest) -> int:
 
 
 def get_orders_by_customer_id(customer_id: int):
+    """Retrieve all orders associated with a specific customer.
+
+    Parameters
+    ----------
+    customer_id : int
+        Identifier of the customer whose orders should be fetched.
+
+    Returns
+    -------
+    list[dict]
+        A list of order rows represented as dictionaries.
+    """
+
     with engine.connect() as session:
         query = select(Orders).where(Orders.c.customer_id == customer_id)
         result = session.execute(query)
@@ -33,6 +59,28 @@ def get_orders_by_customer_id(customer_id: int):
 
 
 def find_upsells(current_order: list[dict], customer_id) -> list[dict]:
+    """Suggest additional quantities based on past ordering behaviour.
+
+    For each item in ``current_order`` the function compares the ordered
+    quantity with the customer's average quantity ordered in the last three
+    months. If the current quantity is lower than the historic average, the
+    difference (delta) is returned.
+
+    Parameters
+    ----------
+    current_order : list[dict]
+        List of items in the new order. Each dictionary should contain
+        ``item_name`` and ``quantity`` keys.
+    customer_id : int
+        ID of the customer for whom upsells are calculated.
+
+    Returns
+    -------
+    list[dict]
+        Suggested upsell information containing ``item_id``, ``item_name``,
+        ``delta`` and ``avg_quantity`` keys.
+    """
+
     three_months_ago = datetime.now() - timedelta(days=90)
     with engine.connect() as session:
         query = (
@@ -81,6 +129,19 @@ def find_upsells(current_order: list[dict], customer_id) -> list[dict]:
 
 
 def get_order_items_info(order_id: int):
+    """Return detailed information about items for a specific order.
+
+    Parameters
+    ----------
+    order_id : int
+        The ID of the order to inspect.
+
+    Returns
+    -------
+    list[dict]
+        A list of dictionaries representing the joined order and item rows.
+    """
+
     with engine.connect() as session:
         query = (
             select(Orders, Items)

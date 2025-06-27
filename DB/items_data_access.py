@@ -5,6 +5,8 @@ from .tables import Items, Links, ItemLinks
 
 
 def get_all_items():
+    """Return a list of all items in the database."""
+
     with engine.connect() as session:
         query = select(Items)
         result = session.execute(query)
@@ -13,6 +15,8 @@ def get_all_items():
 
 
 def get_item_info_by_id(item_id: int):
+    """Fetch a single item record by its identifier."""
+
     with engine.connect() as session:
         query = select(Items).where(Items.c.item_id == item_id)
         result = session.execute(query)
@@ -21,6 +25,8 @@ def get_item_info_by_id(item_id: int):
 
 
 def get_items_by_name(item_name: str):
+    """Return items with an exact matching name."""
+
     with engine.connect() as session:
         query = select(Items).where(Items.c.item_name == item_name)
         result = session.execute(query)
@@ -29,6 +35,8 @@ def get_items_by_name(item_name: str):
 
 
 def get_links_by_item_id(item_id: int):
+    """Retrieve items that are linked to the given item ID."""
+
     with engine.connect() as session:
         il1 = ItemLinks.alias("il1")
         il2 = ItemLinks.alias("il2")
@@ -54,6 +62,20 @@ def get_links_by_item_id(item_id: int):
 
 
 def get_missing_linked_items_with_context(ordered_item_ids: list[int]) -> list[dict]:
+    """Suggest linked items that were not part of the order.
+
+    Parameters
+    ----------
+    ordered_item_ids : list[int]
+        IDs of the items included in the current order.
+
+    Returns
+    -------
+    list[dict]
+        Suggestions grouped by link name with context for why they were
+        suggested.
+    """
+
     with engine.connect() as session:
         il1 = ItemLinks.alias("il1")
         il2 = ItemLinks.alias("il2")
@@ -93,6 +115,24 @@ def get_missing_linked_items_with_context(ordered_item_ids: list[int]) -> list[d
 
 
 def map_item_names_to_ids(items: list[dict]) -> list[dict]:
+    """Translate item names to database IDs using fuzzy matching.
+
+    Each dictionary in ``items`` should contain ``item_name`` and ``quantity``
+    keys. The function attempts to match the given names against names in the
+    database and returns the mapped list preserving the quantities.
+
+    Parameters
+    ----------
+    items : list[dict]
+        Raw item information with names and quantities.
+
+    Returns
+    -------
+    list[dict]
+        The input list where item names were replaced with the corresponding
+        database name and IDs when a match was found.
+    """
+
     mapped_items = []
     with engine.connect() as session:
         all_items_result = session.execute(select(Items.c.item_id, Items.c.item_name))
