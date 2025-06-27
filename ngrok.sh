@@ -1,1 +1,2 @@
+echo "Starting ngrok tunnel..."
 ngrok http --url=normal-similarly-colt.ngrok-free.app 8000
