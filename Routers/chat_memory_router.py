@@ -46,10 +46,16 @@ async def set_order_flag(customer_telephone: str, request: Request):
     return { "status": f"order flag set to {flag}" }
 
 
-@router.post("/append_upsell_items")
-async def append_upsell_items(customer_telephone, request: Request):
+@router.post("/append_upsell_items/{customer_telephone}")
+async def append_upsell_items(customer_telephone: str, request: Request):
+    """Persist upsell suggestions for a customer in Redis."""
     data = await request.json()
-
+    upsell_items = data.get("upsell_items", data)
+    await redis_chat_memory.store_upsell_items(customer_telephone, upsell_items)
+    return {
+        "status": "upsell items stored",
+        "upsell_items": upsell_items,
+    }
 
 @router.get("/get_order_flag/{customer_telephone}")
 async def get_order_flag(customer_telephone: str):
