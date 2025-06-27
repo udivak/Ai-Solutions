@@ -54,29 +54,23 @@ async def get_chat_history(customer_telephone: str) -> list:
 ### === ORDER ITEM STORAGE (if needed) ===
 
 async def store_order_items(customer_telephone: str, items_to_add: list[dict] | dict):
+    """Persist order items in redis as a hash of ``item_name`` -> ``quantity``."""
     key = f"order:{customer_telephone}"
-    existing_items = await get_order_items(customer_telephone)
-    existing_item_names = { item['item_name'] for item in existing_items }
+
     if isinstance(items_to_add, dict):
         items_to_add = [items_to_add]
 
-    for item in items_to_add:
-        print("ITEM ------->", item)
-        if item['item_name'] in existing_item_names:
-            print(f"{item['item_name']} is already in existing items")
-            for existing_item in existing_items:
-                if existing_item['item_name'] == item['item_name']:
-                    existing_item['quantity'] = item['quantity']
-        else:
-            existing_items.append(item)
-
-    await r.set(key, json.dumps(existing_items), ex=3600)
+    mapping = {item["item_name"]: item["quantity"] for item in items_to_add}
+    if mapping:
+        await r.hset(key, mapping=mapping)
+        await r.expire(key, 3600)
 
 
-async def get_order_items(customer_telephone: str) -> list:
+async def get_order_items(customer_telephone: str) -> dict:
+    """Return stored order items as a mapping of item names to quantities."""
     key = f"order:{customer_telephone}"
-    raw = await r.get(key)
-    return json.loads(raw) if raw else []
+    raw = await r.hgetall(key)
+    return {name: int(qty) for name, qty in raw.items()}
 
 
 
