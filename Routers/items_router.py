@@ -5,7 +5,7 @@ from starlette.requests import Request
 
 import DB.redis_chat_memory
 from utils import utils
-from DB import data_access, redis_chat_memory
+from DB import items_data_access as data_access, redis_chat_memory
 from utils.models import OrderRequest
 
 router = APIRouter()
