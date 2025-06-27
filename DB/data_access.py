@@ -70,15 +70,17 @@ def get_orders_by_customer_id(customer_id: int):
 
 
 """
-Find items that current order have less quantity than the average quantity of the customer's previous orders.
+Find items where the quantity in the current order is below the customer's
+average purchases from the past three months.
 
 Args:
-    current_order (OrderRequest): The order to compare with.
-    new_order_id (int): The id of the new order, to exclude it from the calculation.
+    current_order (list[dict]): Order items to compare.
+    customer_id (int): Customer identifier for history comparison.
 
 Returns:
-    list[dict]: A list of dictionaries, each dictionary has a single key-value pair,
-        where the key is the item_id and the value is the quantity difference.
+    list[dict]: A list of dictionaries describing the shortfall for each item.
+        Each dictionary includes ``item_id``, ``item_name``, ``delta`` and
+        ``avg_quantity``.
 """
 def find_upsells(current_order: list[dict], customer_id) -> list[dict]:
     three_months_ago = datetime.now() - timedelta(days=90)
