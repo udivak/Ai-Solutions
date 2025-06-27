@@ -1,4 +1,7 @@
 from datetime import date
+import pytest
+
+pytest.importorskip("httpx")
 from fastapi.testclient import TestClient
 from main import app
 from intent_logic.intent_matcher import process_keywords, detect_intent
