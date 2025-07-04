@@ -5,7 +5,7 @@ pytest.importorskip("httpx")
 from fastapi.testclient import TestClient
 from main import app
 from intent_logic.intent_matcher import process_keywords, detect_intent
-from utils.utils import translate_item_name
+from utils.utils import get_mapped_item_name
 
 client = TestClient(app)
 
@@ -25,7 +25,7 @@ def test_detect_intent_endpoint():
 
 
 def test_translate_item_name():
-    assert translate_item_name("מלפפון") == "מלפ"
+    assert get_mapped_item_name("מלפפון") == "מלפ"
 
 
 def test_process_keywords():

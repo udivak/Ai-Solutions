@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 
 # Configure Redis connection
-r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+r = redis.Redis(host='localhost', port=6379, db=0, password="Ai1615Solutions", decode_responses=True)
 
 ### === SESSION METADATA === ###
 
@@ -41,7 +41,6 @@ async def append_chat_message(customer_telephone: str, sender: str, message: str
         "text": message
     }
     await r.rpush(key, json.dumps(entry))
-    # Optionally keep the list for 30 days
     await r.expire(key, 3600)
 
 

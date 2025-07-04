@@ -26,7 +26,7 @@ async def append_message(customer_telephone: str, request: Request):
     sender = message_request.get('sender', '')
     text = message_request.get('text', '')
     await redis_chat_memory.append_chat_message(customer_telephone, sender, text)
-    return { "status": "message append successfully"}
+    return { "status": "message append successfully" }
 
 
 @router.post("/append_items/{customer_telephone}")

@@ -1,5 +1,5 @@
 from sqlalchemy import select, and_
-from utils.item_processing_utils import normalize_hebrew, find_best_match
+from utils.item_processing_utils import *
 from .db_connection import engine
 from .tables import Items, Links, ItemLinks
 
@@ -132,12 +132,18 @@ def map_item_names_to_ids(items: list[dict]) -> list[dict]:
         The input list where item names were replaced with the corresponding
         database name and IDs when a match was found.
     """
-
     mapped_items = []
+    # for item in items:
+    #     user_input_name = item["item_name"]
+    #     matched_name = get_mapped_item_name(user_input_name)
+    #     if matched_name:
+    #         item["item_name"] = matched_name
+    #         item["identified"] = True
+
     with engine.connect() as session:
         all_items_result = session.execute(select(Items.c.item_id, Items.c.item_name))
         all_items = list(all_items_result.mappings())
-        normalized_map = {
+        normalized_item_names_from_DB = {
             normalize_hebrew(item["item_name"]): item
             for item in all_items
         }
@@ -145,29 +151,35 @@ def map_item_names_to_ids(items: list[dict]) -> list[dict]:
         for item in items:
             user_input_name = item["item_name"]
             quantity = item["quantity"]
+            matched_name = get_mapped_item_name(user_input_name)        # match item name using item_name_map.json
+            if matched_name:
+                item["item_name"] = matched_name
 
-            like_query = select(Items).where(Items.c.item_name.like(f"%{user_input_name}%"))
+            like_query = select(Items).where(Items.c.item_name.like(f"%{item["item_name"]}%"))
             result = session.execute(like_query)
             matched = result.mappings().first()
 
-            if matched:
+            db_item_name = None
+            if matched:                                     # matched with LIKE query
                 db_item_name = matched["item_name"]
                 item_id = matched["item_id"]
-            else:
+
+            else:                                           # use RapidFuzz to match
                 normalized_input = normalize_hebrew(user_input_name)
-                candidates = list(normalized_map.keys())
+                candidates = list(normalized_item_names_from_DB.keys())
                 best_match, score = find_best_match(normalized_input, candidates)
 
                 if not best_match or score < 85:
-                    db_item_name = user_input_name
+                    # db_item_name = user_input_name
                     item_id = None
-                else:
-                    matched = normalized_map[best_match]
+
+                else:                                       # identified using RapidFuzz
+                    matched = normalized_item_names_from_DB[best_match]
                     db_item_name = matched["item_name"]
                     item_id = matched["item_id"]
 
             mapped_items.append({
-                "item_name": db_item_name,
+                "item_name": db_item_name if db_item_name else user_input_name,
                 "item_id": item_id,
                 "quantity": quantity
             })
